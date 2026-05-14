@@ -1,0 +1,22 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.x.x",
+    "bcryptjs": "^2.x.x",
+    "cors": "^2.x.x",
+    "dotenv": "^16.x.x",
+    "express": "^4.x.x",
+    "express-rate-limit": "^7.x.x",
+    "jsonwebtoken": "^9.x.x",
+    "razorpay": "^2.x.x",
+    "zod": "^3.x.x",
+    "helmet": "^7.x.x"
+  }
+}

@@ -1,0 +1,202 @@
+import { useState } from 'react'
+import axios from 'axios'
+import toast from 'react-hot-toast'
+
+const API = import.meta.env.VITE_API_URL
+const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID
+
+export default function Register() {
+  const [form, setForm] = useState({
+    full_name: '', team: '', category: '', phone: ''
+  })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  const handleChange = e =>
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }))
+
+  const loadRazorpay = () => new Promise(resolve => {
+    if (window.Razorpay) return resolve(true)
+    const s = document.createElement('script')
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    s.onload = () => resolve(true)
+    s.onerror = () => resolve(false)
+    document.body.appendChild(s)
+  })
+
+  const handleSubmit = async () => {
+    if (!form.full_name.trim()) return toast.error('नाव टाका')
+    if (!form.team.trim())      return toast.error('टीम टाका')
+    if (!form.category)         return toast.error('कॅटेगरी निवडा')
+    if (!/^[6-9]\d{9}$/.test(form.phone))
+      return toast.error('योग्य 10 अंकी फोन नंबर टाका')
+
+    setLoading(true)
+    try {
+      const { data } = await axios.post(`${API}/api/create-order`, form)
+      const loaded = await loadRazorpay()
+      if (!loaded) {
+        toast.error('Razorpay लोड झाले नाही')
+        setLoading(false)
+        return
+      }
+
+      new window.Razorpay({
+  key:         RAZORPAY_KEY,
+  amount:      data.amount,
+  currency:    data.currency,
+  order_id:    data.order_id,
+  name:        'रेवस बोडणी प्रीमियर लीग 2026',
+  description: 'Player Registration Fee',
+  prefill:     { name: form.full_name, contact: form.phone },
+  theme:       { color: '#1c1917' },
+
+  // ADD THESE 3 LINES
+  config: {
+    display: {
+      blocks: {
+        utib: { name: 'UPI', instruments: [
+          { method: 'upi', flows: ['collect', 'intent', 'qr'] }
+        ]}
+      },
+      sequence: ['block.utib'],
+      preferences: { show_default_blocks: true }
+    }
+  },
+        handler: async response => {
+          try {
+            await axios.post(`${API}/api/verify-payment`, {
+              ...form,
+              razorpay_order_id:   response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature:  response.razorpay_signature
+            })
+            setSuccess(true)
+            toast.success('नोंदणी यशस्वी!')
+          } catch (err) {
+            toast.error(err.response?.data?.error || 'Verification failed')
+          }
+          setLoading(false)
+        },
+        modal: {
+          ondismiss: () => {
+            toast('Payment रद्द केले', { icon: 'ℹ️' })
+            setLoading(false)
+          }
+        }
+      }).open()
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'काहीतरी चुकले')
+      setLoading(false)
+    }
+  }
+
+  if (success) return (
+    <div className="min-h-screen bg-[#faf7f2] flex items-center justify-center px-4">
+      <div className="text-center max-w-sm">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✅</div>
+        <h2 className="text-2xl font-bold text-[#1c1917] mb-2">नोंदणी यशस्वी!</h2>
+        <p className="text-[#78716c] mb-6">
+          <span className="font-semibold text-[#1c1917]">{form.full_name}</span>, तुमची
+          नोंदणी <span className="font-semibold">{form.team}</span> टीमसाठी झाली आहे.
+        </p>
+        <a href="/players"
+          className="inline-block bg-[#1c1917] text-[#f5f0e8] px-6 py-3 rounded-xl font-medium text-sm">
+          सर्व खेळाडू पहा →
+        </a>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="min-h-screen bg-[#faf7f2] px-4 py-10">
+      <div className="max-w-md mx-auto">
+
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-[#1c1917] mb-1">खेळाडू नोंदणी</h2>
+          <p className="text-[#78716c] text-sm">सर्व माहिती भरा आणि ₹100 payment करा</p>
+        </div>
+
+        <div className="bg-white border border-[#e8e0d5] rounded-2xl p-6 shadow-sm space-y-5">
+
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-[#44403c] mb-1.5">
+              खेळाडू पूर्ण नाव <span className="text-red-400">*</span>
+            </label>
+            <input
+              name="full_name"
+              value={form.full_name}
+              onChange={handleChange}
+              placeholder="उदा. Krish Uttam Koli"
+              className="w-full px-4 py-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] text-[#1c1917] text-sm focus:outline-none focus:border-[#d4a853] focus:ring-1 focus:ring-[#d4a853] transition"
+            />
+          </div>
+
+          {/* Team */}
+          <div>
+            <label className="block text-sm font-medium text-[#44403c] mb-1.5">
+              खेळाडू टीम <span className="text-red-400">*</span>
+            </label>
+            <input
+              name="team"
+              value={form.team}
+              onChange={handleChange}
+              placeholder="उदा. Team Warriors"
+              className="w-full px-4 py-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] text-[#1c1917] text-sm focus:outline-none focus:border-[#d4a853] focus:ring-1 focus:ring-[#d4a853] transition"
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-[#44403c] mb-1.5">
+              खेळाडू कॅटेगरी <span className="text-red-400">*</span>
+            </label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] text-[#1c1917] text-sm focus:outline-none focus:border-[#d4a853] focus:ring-1 focus:ring-[#d4a853] transition"
+            >
+              <option value="">-- निवडा --</option>
+              <option value="ऑल राउंडर">ऑल राउंडर</option>
+              <option value="फलंदाज">फलंदाज</option>
+              <option value="गोलंदाज">गोलंदाज</option>
+            </select>
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-[#44403c] mb-1.5">
+              फोन नंबर <span className="text-red-400">*</span>
+            </label>
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="10 अंकी नंबर"
+              maxLength={10}
+              type="tel"
+              className="w-full px-4 py-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] text-[#1c1917] text-sm focus:outline-none focus:border-[#d4a853] focus:ring-1 focus:ring-[#d4a853] transition"
+            />
+          </div>
+
+          {/* Fee notice */}
+          <div className="bg-[#fef9ec] border border-[#f0d080] rounded-xl px-4 py-3 text-xs text-[#92680a]">
+            नोंदणी शुल्क <strong>₹100</strong> — UPI / GPay / PhonePe / Paytm द्वारे payment केल्यावरच नोंदणी पूर्ण होईल.
+          </div>
+
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-[#1c1917] hover:bg-[#292524] disabled:opacity-60 text-[#f5f0e8] font-semibold py-4 rounded-xl text-sm transition-colors"
+          >
+            {loading ? 'Processing...' : '₹100 भरा आणि नोंदणी करा'}
+          </button>
+
+        </div>
+      </div>
+    </div>
+  )
+}
