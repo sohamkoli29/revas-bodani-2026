@@ -97,9 +97,10 @@ export default function Register() {
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">✅</div>
         <h2 className="text-2xl font-bold text-[#1c1917] mb-2">नोंदणी यशस्वी!</h2>
         <p className="text-[#78716c] mb-6">
-          <span className="font-semibold text-[#1c1917]">{form.full_name}</span>, तुमची
-          नोंदणी <span className="font-semibold">{form.team}</span> टीमसाठी झाली आहे.
-        </p>
+  <span className="font-semibold text-[#1c1917]">{form.full_name}</span>, तुमची{' '}
+  <span className="font-semibold text-[#d4a853]">रेवस बोडणी प्रीमियर लीग 2026</span>{' '}
+  साठी नोंदणी झाली आहे.
+</p>
         <a href="/players"
           className="inline-block bg-[#1c1917] text-[#f5f0e8] px-6 py-3 rounded-xl font-medium text-sm">
           सर्व खेळाडू पहा →
@@ -128,7 +129,7 @@ export default function Register() {
               name="full_name"
               value={form.full_name}
               onChange={handleChange}
-              placeholder="उदा. Krish Uttam Koli"
+              placeholder="type your full name"
               className="w-full px-4 py-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] text-[#1c1917] text-sm focus:outline-none focus:border-[#d4a853] focus:ring-1 focus:ring-[#d4a853] transition"
             />
           </div>
@@ -142,7 +143,7 @@ export default function Register() {
               name="team"
               value={form.team}
               onChange={handleChange}
-              placeholder="उदा. Team Warriors"
+              placeholder="Type your team name"
               className="w-full px-4 py-3 rounded-xl border border-[#e8e0d5] bg-[#faf7f2] text-[#1c1917] text-sm focus:outline-none focus:border-[#d4a853] focus:ring-1 focus:ring-[#d4a853] transition"
             />
           </div>
