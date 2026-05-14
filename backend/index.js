@@ -26,8 +26,16 @@ app.use(cors({
 app.use(express.json())
 
 // Health check (for UptimeRobot ping)
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' })
+app.get('/api/health', async (req, res) => {
+  const { error } = await supabase
+    .from('players')
+    .select('count')
+    .limit(1)
+
+  res.json({ 
+    status: 'ok',
+    db: error ? 'error' : 'connected'
+  })
 })
 
 // Routes with rate limiters
