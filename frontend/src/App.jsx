@@ -37,8 +37,17 @@ function Footer() {
             रेवस बोडणी प्रीमियर लीग 2026
           </p>
           <p className="text-[#78716c] text-xs mt-1">
-            © 2026 Created by Soham Koli. All rights reserved.
-          </p>
+  © 2026 Created by{' '}
+  <a
+    href="https://sohamkoli.netlify.app"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="hover:text-[#d4a853] transition-colors underline underline-offset-2"
+  >
+    Soham Koli
+  </a>
+  . All rights reserved.
+</p>
           {/* ADD HERE ↓ */}
           <div className="flex gap-4 mt-2 justify-center md:justify-start">
             <a href="/terms"
