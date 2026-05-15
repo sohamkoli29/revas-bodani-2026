@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { load } from '@cashfreepayments/cashfree-js'
 
 const API = import.meta.env.VITE_API_URL
-const RAZORPAY_KEY = import.meta.env.VITE_RAZORPAY_KEY_ID
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -15,15 +15,6 @@ export default function Register() {
   const handleChange = e =>
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
 
-  const loadRazorpay = () => new Promise(resolve => {
-    if (window.Razorpay) return resolve(true)
-    const s = document.createElement('script')
-    s.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    s.onload = () => resolve(true)
-    s.onerror = () => resolve(false)
-    document.body.appendChild(s)
-  })
-
   const handleSubmit = async () => {
     if (!form.full_name.trim()) return toast.error('नाव टाका')
     if (!form.team.trim())      return toast.error('टीम टाका')
@@ -34,57 +25,14 @@ export default function Register() {
     setLoading(true)
     try {
       const { data } = await axios.post(`${API}/api/create-order`, form)
-      const loaded = await loadRazorpay()
-      if (!loaded) {
-        toast.error('Razorpay लोड झाले नाही')
-        setLoading(false)
-        return
-      }
 
-      new window.Razorpay({
-  key:         RAZORPAY_KEY,
-  amount:      data.amount,
-  currency:    data.currency,
-  order_id:    data.order_id,
-  name:        'रेवस बोडणी प्रीमियर लीग 2026',
-  description: 'Player Registration Fee',
-  prefill:     { name: form.full_name, contact: form.phone },
-  theme:       { color: '#1c1917' },
+      const cashfree = await load({ mode: 'production' })
 
-  // ADD THESE 3 LINES
-  config: {
-    display: {
-      blocks: {
-        utib: { name: 'UPI', instruments: [
-          { method: 'upi', flows: ['collect', 'intent', 'qr'] }
-        ]}
-      },
-      sequence: ['block.utib'],
-      preferences: { show_default_blocks: true }
-    }
-  },
-        handler: async response => {
-          try {
-            await axios.post(`${API}/api/verify-payment`, {
-              ...form,
-              razorpay_order_id:   response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature:  response.razorpay_signature
-            })
-            setSuccess(true)
-            toast.success('नोंदणी यशस्वी!')
-          } catch (err) {
-            toast.error(err.response?.data?.error || 'Verification failed')
-          }
-          setLoading(false)
-        },
-        modal: {
-          ondismiss: () => {
-            toast('Payment रद्द केले', { icon: 'ℹ️' })
-            setLoading(false)
-          }
-        }
-      }).open()
+      cashfree.checkout({
+        paymentSessionId: data.payment_session_id,
+        redirectTarget:   '_self'
+      })
+
     } catch (err) {
       toast.error(err.response?.data?.error || 'काहीतरी चुकले')
       setLoading(false)

@@ -78,7 +78,7 @@ export default function Terms() {
               Player information (name, team, phone number) is collected
               solely for tournament management purposes. We do not sell
               or share personal data with any third parties. Payment
-              processing is handled securely by Razorpay.
+              processing is handled securely by Cashfree.
             </p>
           </section>
 

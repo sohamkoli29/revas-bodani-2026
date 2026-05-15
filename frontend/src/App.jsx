@@ -7,6 +7,8 @@ import Players from './pages/Players'
 import Admin from './pages/Admin'
 import Terms from './pages/Terms'
 import About from './pages/About'
+import Verify from './pages/Verify'
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -18,6 +20,7 @@ export default function App() {
         <Route path="/admin"    element={<Admin />} />
         <Route path="/terms" element={<Terms />} />
 <Route path="/about" element={<About />} />
+<Route path="/verify" element={<Verify />} />
       </Routes>
       <Footer />
     </BrowserRouter>

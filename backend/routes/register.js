@@ -1,62 +1,55 @@
 import express from 'express'
-import Razorpay from 'razorpay'
 import { z } from 'zod'
+import { Cashfree, CFEnvironment } from 'cashfree-pg'
 import supabase from '../db/supabase.js'
 
 const router = express.Router()
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+const cashfree = new Cashfree({
+  env: process.env.CASHFREE_ENV === 'PROD'
+    ? CFEnvironment.PRODUCTION
+    : CFEnvironment.SANDBOX,
+  clientId:     process.env.CASHFREE_APP_ID,
+  clientSecret: process.env.CASHFREE_SECRET_KEY,
 })
 
-// Validation schema
 const schema = z.object({
-  full_name: z.string()
-    .min(2, 'Name too short')
-    .max(50, 'Name too long')
-    .regex(/^[\u0900-\u097Fa-zA-Z\s]+$/, 'Invalid characters in name'),
-  team: z.string()
-    .min(2, 'Team name too short')
-    .max(30, 'Team name too long'),
-  category: z.enum(['ऑल राउंडर', 'फलंदाज', 'गोलंदाज'], {
-    errorMap: () => ({ message: 'Invalid category' })
-  }),
-  phone: z.string()
-    .regex(/^[6-9]\d{9}$/, 'Invalid Indian phone number')
+  full_name: z.string().min(2).max(50),
+  team:      z.string().min(2).max(30),
+  category:  z.enum(['ऑल राउंडर', 'फलंदाज', 'गोलंदाज']),
+  phone:     z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number')
 })
 
 router.post('/create-order', async (req, res) => {
-  // Validate input
   const result = schema.safeParse(req.body)
-  if (!result.success) {
-    return res.status(400).json({
-      error: result.error.errors[0].message
-    })
-  }
+  if (!result.success)
+    return res.status(400).json({ error: result.error.errors[0].message })
 
   const { full_name, team, category, phone } = result.data
 
-  // Check phone already registered
-
-
-  // Create Razorpay order
   try {
-    const order = await razorpay.orders.create({
-      amount: 100 * 100,   // ₹100 in paise
-      currency: 'INR',
-      receipt: `receipt_${phone}`,
-      notes: { full_name, team, category, phone }
+    const response = await cashfree.PGCreateOrder({
+      order_amount:   100,
+      order_currency: 'INR',
+      order_id:       `rbpl_${Date.now()}`,
+      customer_details: {
+        customer_id:    phone,
+        customer_name:  full_name,
+        customer_phone: phone,
+        customer_email: 'noreply@revasbodani.com'
+      },
+      order_meta: {
+        return_url: `${process.env.FRONTEND_URL}/verify?order_id={order_id}&full_name=${encodeURIComponent(full_name)}&team=${encodeURIComponent(team)}&category=${encodeURIComponent(category)}&phone=${phone}`
+      },
+      order_note: `${team} - ${category}`
     })
 
     res.json({
-      order_id: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      key: process.env.RAZORPAY_KEY_ID
+      order_id:           response.data.order_id,
+      payment_session_id: response.data.payment_session_id
     })
   } catch (err) {
-    console.error('Razorpay error:', err)
+    console.error('Cashfree error:', err?.response?.data || err)
     res.status(500).json({ error: 'Payment initiation failed' })
   }
 })
