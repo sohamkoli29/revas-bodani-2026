@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export default function Home() {
   const info = [
-    { label: 'नोंदणी शेवट',  value: ' 01 June 2026' },
+    { label: 'नोंदणी शेवट',  value: ' 02 June 2026' },
     { label: 'नोंदणी शुल्क', value: '₹100' },
     { label: 'ठिकाण',        value: 'रेवस बोडणी मैदान' },
     
