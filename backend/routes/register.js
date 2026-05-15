@@ -5,13 +5,11 @@ import supabase from '../db/supabase.js'
 
 const router = express.Router()
 
-const cashfree = new Cashfree({
-  env: process.env.CASHFREE_ENV === 'PROD'
-    ? CFEnvironment.PRODUCTION
-    : CFEnvironment.SANDBOX,
-  clientId:     process.env.CASHFREE_APP_ID,
-  clientSecret: process.env.CASHFREE_SECRET_KEY,
-})
+const cashfree = new Cashfree(
+  CFEnvironment.PRODUCTION,
+  process.env.CASHFREE_APP_ID,
+  process.env.CASHFREE_SECRET_KEY
+)
 
 const schema = z.object({
   full_name: z.string().min(2).max(50),
@@ -28,7 +26,7 @@ router.post('/create-order', async (req, res) => {
   const { full_name, team, category, phone } = result.data
 
   try {
-    const response = await cashfree.PGCreateOrder({
+    const orderData = {
       order_amount:   100,
       order_currency: 'INR',
       order_id:       `rbpl_${Date.now()}`,
@@ -42,14 +40,17 @@ router.post('/create-order', async (req, res) => {
         return_url: `${process.env.FRONTEND_URL}/verify?order_id={order_id}&full_name=${encodeURIComponent(full_name)}&team=${encodeURIComponent(team)}&category=${encodeURIComponent(category)}&phone=${phone}`
       },
       order_note: `${team} - ${category}`
-    })
+    }
+
+    const response = await cashfree.PGCreateOrder(orderData)
 
     res.json({
       order_id:           response.data.order_id,
       payment_session_id: response.data.payment_session_id
     })
+
   } catch (err) {
-    console.error('Cashfree error:', err?.response?.data || err)
+    console.error('Cashfree error:', JSON.stringify(err?.response?.data || err?.message || err, null, 2))
     res.status(500).json({ error: 'Payment initiation failed' })
   }
 })

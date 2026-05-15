@@ -5,13 +5,11 @@ import supabase from '../db/supabase.js'
 
 const router = express.Router()
 
-const cashfree = new Cashfree({
-  env: process.env.CASHFREE_ENV === 'PROD'
-    ? CFEnvironment.PRODUCTION
-    : CFEnvironment.SANDBOX,
-  clientId:     process.env.CASHFREE_APP_ID,
-  clientSecret: process.env.CASHFREE_SECRET_KEY,
-})
+const cashfree = new Cashfree(
+  CFEnvironment.PRODUCTION,
+  process.env.CASHFREE_APP_ID,
+  process.env.CASHFREE_SECRET_KEY
+)
 
 const schema = z.object({
   order_id:  z.string(),
@@ -49,14 +47,20 @@ router.post('/verify-payment', async (req, res) => {
 
     const { error } = await supabase
       .from('players')
-      .insert({ full_name, team, category, phone, payment_id, amount: 100, status: 'paid' })
+      .insert({
+        full_name, team, category, phone,
+        payment_id,
+        amount: 100,
+        status: 'paid'
+      })
 
     if (error)
       return res.status(500).json({ error: 'Registration failed' })
 
     res.json({ success: true, message: 'Registration successful!' })
+
   } catch (err) {
-    console.error('Verify error:', err?.response?.data || err)
+    console.error('Verify error:', JSON.stringify(err?.response?.data || err?.message || err, null, 2))
     res.status(500).json({ error: 'Verification failed' })
   }
 })
