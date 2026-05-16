@@ -31,13 +31,22 @@ router.post('/cashfree', express.raw({ type: 'application/json' }), async (req, 
       return res.status(200).json({ received: true })
     }
 
-    const payment    = data.payment
-    const order      = data.order
-    const orderNotes = order.order_tags || {}
+    const payment   = data.payment
+    const order     = data.order
+    const orderTags = order.order_tags || {}
 
     const payment_id = payment.cf_payment_id.toString()
-    const order_id   = order.order_id
-    const phone      = payment.customer_details?.customer_phone
+
+    // Get phone from order_tags first (most reliable)
+    const phone = orderTags.phone
+      || payment.customer_details?.customer_phone
+      || payment.customer_details?.customer_id
+
+    const full_name = decodeURIComponent(orderTags.full_name || '')
+    const team      = decodeURIComponent(orderTags.team      || '')
+    const category  = decodeURIComponent(orderTags.category  || 'ऑल राउंडर')
+
+    console.log('Webhook data:', { full_name, team, category, phone, payment_id })
 
     // Step 3 — Check already saved (redirect may have already saved it)
     const { data: existing } = await supabase
@@ -51,13 +60,7 @@ router.post('/cashfree', express.raw({ type: 'application/json' }), async (req, 
       return res.status(200).json({ received: true })
     }
 
-    // Step 4 — Get player details from order notes
-    // We need to store player data in order — update register.js
-   const full_name = decodeURIComponent(orderNotes.full_name || '')
-const team      = decodeURIComponent(orderNotes.team      || '')
-const category  = decodeURIComponent(orderNotes.category  || 'ऑल राउंडर')
-
-    // Step 5 — Save to Supabase
+    // Step 4 — Save to Supabase
     const { error } = await supabase
       .from('players')
       .insert({

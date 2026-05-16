@@ -14,6 +14,8 @@ dotenv.config()
 
 const app = express()
 
+app.set('trust proxy', 1)  // ← fixes ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+
 // Security headers
 app.use(helmet())
 
@@ -25,6 +27,7 @@ app.use(cors({
   ].filter(Boolean)
 }))
 
+// Webhook MUST come before express.json()
 app.use('/api/webhook', webhookRoute)
 
 app.use(express.json())
@@ -36,7 +39,7 @@ app.get('/api/health', async (req, res) => {
     .select('count')
     .limit(1)
 
-  res.json({ 
+  res.json({
     status: 'ok',
     db: error ? 'error' : 'connected'
   })
