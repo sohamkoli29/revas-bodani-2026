@@ -4,6 +4,7 @@ import helmet from 'helmet'
 import dotenv from 'dotenv'
 import supabase from './db/supabase.js'
 import { registerLimiter, playersLimiter } from './middleware/rateLimit.js'
+import webhookRoute from './routes/webhook.js'
 import registerRoute from './routes/register.js'
 import verifyRoute from './routes/verify.js'
 import playersRoute from './routes/players.js'
@@ -23,6 +24,8 @@ app.use(cors({
     process.env.FRONTEND_URL
   ].filter(Boolean)
 }))
+
+app.use('/api/webhook', webhookRoute)
 
 app.use(express.json())
 

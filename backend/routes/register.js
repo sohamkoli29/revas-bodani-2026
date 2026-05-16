@@ -27,20 +27,27 @@ router.post('/create-order', async (req, res) => {
 
   try {
     const orderData = {
-      order_amount:   100,
-      order_currency: 'INR',
-      order_id:       `rbpl_${Date.now()}`,
-      customer_details: {
-        customer_id:    phone,
-        customer_name:  full_name,
-        customer_phone: phone,
-        customer_email: 'noreply@revasbodani.com'
-      },
-      order_meta: {
-        return_url: `${process.env.FRONTEND_URL}/verify?order_id={order_id}&full_name=${encodeURIComponent(full_name)}&team=${encodeURIComponent(team)}&category=${encodeURIComponent(category)}&phone=${phone}`
-      },
-      order_note: `${team} - ${category}`
-    }
+  order_amount:   100,
+  order_currency: 'INR',
+  order_id:       `rbpl_${Date.now()}`,
+  customer_details: {
+    customer_id:    phone,
+    customer_name:  full_name,
+    customer_phone: phone,
+    customer_email: 'noreply@revasbodani.com'
+  },
+  order_meta: {
+    return_url: `${process.env.FRONTEND_URL}/verify?order_id={order_id}&full_name=${encodeURIComponent(full_name)}&team=${encodeURIComponent(team)}&category=${encodeURIComponent(category)}&phone=${phone}`
+  },
+  // ADD THIS — stores player data for webhook
+  order_tags: {
+  full_name: encodeURIComponent(full_name),
+  team:      encodeURIComponent(team),
+  category:  encodeURIComponent(category),
+  phone
+},
+  order_note: `${team} - ${category}`
+}
 
     const response = await cashfree.PGCreateOrder(orderData)
 
