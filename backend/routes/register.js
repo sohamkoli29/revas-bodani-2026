@@ -18,6 +18,12 @@ const schema = z.object({
   phone:     z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number')
 })
 
+const categoryMap = {
+  'ऑल राउंडर': 'All Rounder',
+  'फलंदाज':    'Batsman',
+  'गोलंदाज':   'Bowler'
+}
+
 router.post('/create-order', async (req, res) => {
   const result = schema.safeParse(req.body)
   if (!result.success)
@@ -27,27 +33,26 @@ router.post('/create-order', async (req, res) => {
 
   try {
     const orderData = {
-  order_amount:   100,
-  order_currency: 'INR',
-  order_id:       `rbpl_${Date.now()}`,
-  customer_details: {
-    customer_id:    phone,
-    customer_name:  full_name,
-    customer_phone: phone,
-    customer_email: 'noreply@revasbodani.com'
-  },
-  order_meta: {
-    return_url: `${process.env.FRONTEND_URL}/verify?order_id={order_id}&full_name=${encodeURIComponent(full_name)}&team=${encodeURIComponent(team)}&category=${encodeURIComponent(category)}&phone=${phone}`
-  },
-  // ADD THIS — stores player data for webhook
-  order_tags: {
-  full_name: encodeURIComponent(full_name),
-  team:      encodeURIComponent(team),
-  category:  encodeURIComponent(category),
-  phone
-},
-  order_note: `${team} - ${category}`
-}
+      order_amount:   100,
+      order_currency: 'INR',
+      order_id:       `rbpl_${Date.now()}`,
+      customer_details: {
+        customer_id:    phone,
+        customer_name:  `Player_${phone}`,
+        customer_phone: phone,
+        customer_email: 'noreply@revasbodani.com'
+      },
+      order_meta: {
+        return_url: `${process.env.FRONTEND_URL}/verify?order_id={order_id}&full_name=${encodeURIComponent(full_name)}&team=${encodeURIComponent(team)}&category=${encodeURIComponent(category)}&phone=${phone}`
+      },
+      order_tags: {
+        full_name: encodeURIComponent(full_name),
+        team:      encodeURIComponent(team),
+        category:  encodeURIComponent(category),
+        phone
+      },
+      order_note: `${team} - ${categoryMap[category] || category}`
+    }
 
     const response = await cashfree.PGCreateOrder(orderData)
 

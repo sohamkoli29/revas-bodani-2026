@@ -30,7 +30,7 @@ export default function Register() {
 
       cashfree.checkout({
         paymentSessionId: data.payment_session_id,
-        redirectTarget:   '_self'
+        redirectTarget:   '_top'
       })
 
     } catch (err) {
